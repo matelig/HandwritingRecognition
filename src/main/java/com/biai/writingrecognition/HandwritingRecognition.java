@@ -3,14 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.biai.handwritingrecognition;
+package com.biai.writingrecognition;
 
 /**
  *
  * @author alachman
  */
 public class HandwritingRecognition {
-
+    
     /**
      * @param args the command line arguments
      */
@@ -18,5 +18,4 @@ public class HandwritingRecognition {
         // TODO code application logic here
         System.out.println("Hello world");
     }
-
 }
