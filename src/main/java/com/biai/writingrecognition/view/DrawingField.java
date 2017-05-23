@@ -1,5 +1,6 @@
 package com.biai.writingrecognition.view;
 
+import com.biai.writingrecognition.DownsampledData;
 import java.awt.AWTEvent;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -32,8 +33,16 @@ public class DrawingField extends JPanel {
     protected double ratioX;
     protected double ratioY;
 
-    //The pixel map of what the user has drawn. Used to downsample it.
+    private DownsampledDataJPanel downsampledDataJPanel;
     protected int pixelMap[];
+
+    public DownsampledDataJPanel getDownsampledDataJPanel() {
+        return downsampledDataJPanel;
+    }
+
+    public void setDownsampledDataJPanel(DownsampledDataJPanel downsampledDataJPanel) {
+        this.downsampledDataJPanel = downsampledDataJPanel;
+    }
 
     public DrawingField() {
         enableEvents(AWTEvent.MOUSE_MOTION_EVENT_MASK
@@ -47,25 +56,53 @@ public class DrawingField extends JPanel {
         repaint();
     }
 
-    /**
-     * Called to downsample a quadrant of the image.
-     *
-     * @param x The x coordinate of the resulting downsample.
-     * @param y The y coordinate of the resulting downsample.
-     * @return Returns true if there were ANY pixels in the specified quadrant.
-     */
-    protected boolean downSampleRegion(final int x, final int y) {
-        final int w = this.image.getWidth(this);
-        final int startX = (int) (this.downSampleLeft + (x * this.ratioX));
-        final int startY = (int) (this.downSampleTop + (y * this.ratioY));
-        final int endX = (int) (startX + this.ratioX);
-        final int endY = (int) (startY + this.ratioY);
+    public void downSample() {
+        final int width = image.getWidth(this);
+        final int height = image.getHeight(this);
+
+        final PixelGrabber grabber = new PixelGrabber(image, 0, 0, width,
+                height, true);
+        try {
+
+            grabber.grabPixels();
+            pixelMap = (int[]) grabber.getPixels();
+            findBounds(width, height);
+
+            DownsampledData data = downsampledDataJPanel.getDownsampledData();
+
+            ratioX = (double) (downSampleRight - downSampleLeft)
+                    / (double) data.getWidth();
+            ratioY = (double) (downSampleBottom - downSampleTop)
+                    / (double) data.getHeight();
+
+            for (int y = 0; y < data.getHeight(); y++) {
+                for (int x = 0; x < data.getWidth(); x++) {
+                    if (downSampleRegion(x, y)) {
+                        data.setPixelData(x, y, true);
+                    } else {
+                        data.setPixelData(x, y, false);
+                    }
+                }
+            }
+
+            downsampledDataJPanel.repaint();
+            repaint();
+        } catch (final InterruptedException e) {
+        }
+    }
+
+    protected boolean downSampleRegion(int x, int y) {
+        final int width = image.getWidth(this);
+        final int startX = (int) (downSampleLeft + (x * ratioX));
+        final int startY = (int) (downSampleTop + (y * ratioY));
+        final int endX = (int) (startX + ratioX);
+        final int endY = (int) (startY + ratioY);
 
         for (int yy = startY; yy <= endY; yy++) {
             for (int xx = startX; xx <= endX; xx++) {
-                final int loc = xx + (yy * w);
+                int loc = xx + (yy * width);
 
-                if (this.pixelMap[loc] != -1) {
+                if (pixelMap[loc] != -1) {
                     return true;
                 }
             }
@@ -74,39 +111,31 @@ public class DrawingField extends JPanel {
         return false;
     }
 
-    /**
-     * This method is called to automatically crop the image so that whitespace
-     * is removed.
-     *
-     * @param w The width of the image.
-     * @param h The height of the image
-     */
-    protected void findBounds(final int w, final int h) {
-        // top line
-        for (int y = 0; y < h; y++) {
+    protected void findBounds(int width, int height) {
+
+        for (int y = 0; y < height; y++) {
             if (!isHorizontalLineClear(y)) {
-                this.downSampleTop = y;
+                downSampleTop = y;
                 break;
             }
 
         }
-        // bottom line
-        for (int y = h - 1; y >= 0; y--) {
+
+        for (int y = height - 1; y >= 0; y--) {
             if (!isHorizontalLineClear(y)) {
-                this.downSampleBottom = y;
+                downSampleBottom = y;
                 break;
             }
         }
-        // left line
-        for (int x = 0; x < w; x++) {
+
+        for (int x = 0; x < width; x++) {
             if (!isVerticalLineClear(x)) {
-                this.downSampleLeft = x;
+                downSampleLeft = x;
                 break;
             }
         }
 
-        // right line
-        for (int x = w - 1; x >= 0; x--) {
+        for (int x = width - 1; x >= 0; x--) {
             if (!isVerticalLineClear(x)) {
                 downSampleRight = x;
                 break;
@@ -114,14 +143,10 @@ public class DrawingField extends JPanel {
         }
     }
 
-    /*
-     * isHorizontalLineClear and vertical are used to check if there are any
-     * pixels in the given line. Used for cropping image.
-     */
     protected boolean isHorizontalLineClear(final int y) {
-        final int w = image.getWidth(this);
-        for (int i = 0; i < w; i++) {
-            if (pixelMap[(y * w) + i] != -1) {
+        final int width = image.getWidth(this);
+        for (int i = 0; i < width; i++) {
+            if (pixelMap[(y * width) + i] != -1) {
                 return false;
             }
         }
@@ -129,17 +154,16 @@ public class DrawingField extends JPanel {
     }
 
     protected boolean isVerticalLineClear(final int x) {
-        final int w = image.getWidth(this);
-        final int h = image.getHeight(this);
-        for (int i = 0; i < h; i++) {
-            if (pixelMap[(i * w) + x] != -1) {
+        final int width = image.getWidth(this);
+        final int height = image.getHeight(this);
+        for (int i = 0; i < height; i++) {
+            if (pixelMap[(i * width) + x] != -1) {
                 return false;
             }
         }
         return true;
     }
 
-    //Setup the internal image that the user draws onto.
     protected void initImage() {
         image = createImage(getWidth(), getHeight());
         graphicsHandle = image.getGraphics();
@@ -147,7 +171,6 @@ public class DrawingField extends JPanel {
         graphicsHandle.fillRect(0, 0, getWidth(), getHeight());
     }
 
-    //painting boundary around cropped image
     @Override
     public void paint(final Graphics g) {
         if (image == null) {
@@ -163,7 +186,6 @@ public class DrawingField extends JPanel {
 
     }
 
-    //saving last position where user clicked
     @Override
     protected void processMouseEvent(final MouseEvent e) {
         if (e.getID() != MouseEvent.MOUSE_PRESSED) {
@@ -173,7 +195,6 @@ public class DrawingField extends JPanel {
         lastY = e.getY();
     }
 
-    //drawing
     @Override
     protected void processMouseMotionEvent(final MouseEvent e) {
         if (e.getID() != MouseEvent.MOUSE_DRAGGED) {

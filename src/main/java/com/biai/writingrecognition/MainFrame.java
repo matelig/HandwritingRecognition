@@ -5,12 +5,15 @@
  */
 package com.biai.writingrecognition;
 
-import java.awt.Graphics;
 import java.awt.Image;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -19,12 +22,15 @@ import javax.swing.ImageIcon;
 public class MainFrame extends javax.swing.JFrame {
 
     private BufferedImage image;
+    private List<DownsampledData> lettersList = new ArrayList<>();
 
     /**
      * Creates new form MainFrame
      */
     public MainFrame() {
         initComponents();
+        initialise();
+
     }
 
     /**
@@ -37,19 +43,19 @@ public class MainFrame extends javax.swing.JFrame {
     private void initComponents() {
 
         jPanel1 = new javax.swing.JPanel();
-        pickFIleButton = new javax.swing.JButton();
+        pickFileButton = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         drawingField1 = new com.biai.writingrecognition.view.DrawingField();
-        jButton1 = new javax.swing.JButton();
-        jComboBox1 = new javax.swing.JComboBox<>();
+        clearButton = new javax.swing.JButton();
+        letterComboBox = new javax.swing.JComboBox<>();
         jLabel4 = new javax.swing.JLabel();
-        jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
+        trainButton = new javax.swing.JButton();
+        recognizeButton = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
-        drawingField3 = new com.biai.writingrecognition.view.DrawingField();
+        downsampledDataJPanel1 = new com.biai.writingrecognition.view.DownsampledDataJPanel();
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -64,10 +70,10 @@ public class MainFrame extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        pickFIleButton.setText("Load image");
-        pickFIleButton.addActionListener(new java.awt.event.ActionListener() {
+        pickFileButton.setText("Load image");
+        pickFileButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                pickFIleButtonActionPerformed(evt);
+                pickFileButtonActionPerformed(evt);
             }
         });
 
@@ -86,23 +92,28 @@ public class MainFrame extends javax.swing.JFrame {
             .addGap(0, 220, Short.MAX_VALUE)
         );
 
-        jButton1.setText("Clear");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        clearButton.setText("Clear");
+        clearButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                clearButtonActionPerformed(evt);
             }
         });
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }));
+        letterComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }));
 
         jLabel4.setText("Train as");
 
-        jButton2.setText("Train");
-
-        jButton3.setText(">>");
-        jButton3.addActionListener(new java.awt.event.ActionListener() {
+        trainButton.setText("Train");
+        trainButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
+                trainButtonActionPerformed(evt);
+            }
+        });
+
+        recognizeButton.setText(">>");
+        recognizeButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                recognizeButtonActionPerformed(evt);
             }
         });
 
@@ -111,16 +122,16 @@ public class MainFrame extends javax.swing.JFrame {
         jTextArea1.setRows(5);
         jScrollPane1.setViewportView(jTextArea1);
 
-        drawingField3.setPreferredSize(new java.awt.Dimension(220, 220));
+        downsampledDataJPanel1.setPreferredSize(new java.awt.Dimension(220, 220));
 
-        javax.swing.GroupLayout drawingField3Layout = new javax.swing.GroupLayout(drawingField3);
-        drawingField3.setLayout(drawingField3Layout);
-        drawingField3Layout.setHorizontalGroup(
-            drawingField3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        javax.swing.GroupLayout downsampledDataJPanel1Layout = new javax.swing.GroupLayout(downsampledDataJPanel1);
+        downsampledDataJPanel1.setLayout(downsampledDataJPanel1Layout);
+        downsampledDataJPanel1Layout.setHorizontalGroup(
+            downsampledDataJPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 220, Short.MAX_VALUE)
         );
-        drawingField3Layout.setVerticalGroup(
-            drawingField3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        downsampledDataJPanel1Layout.setVerticalGroup(
+            downsampledDataJPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 220, Short.MAX_VALUE)
         );
 
@@ -136,43 +147,40 @@ public class MainFrame extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
+                                .addGap(130, 130, 130)
+                                .addComponent(clearButton))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(100, 100, 100)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(pickFileButton, javax.swing.GroupLayout.PREFERRED_SIZE, 137, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(60, 60, 60)
+                                        .addComponent(jLabel2))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(33, 33, 33)
+                                        .addComponent(jLabel3)))))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
                                 .addGap(59, 59, 59)
                                 .addComponent(drawingField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 166, Short.MAX_VALUE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .addGroup(layout.createSequentialGroup()
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addContainerGap(329, Short.MAX_VALUE)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jButton2)
+                                    .addComponent(trainButton)
                                     .addGroup(layout.createSequentialGroup()
                                         .addGap(9, 9, 9)
-                                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(letterComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                                     .addGroup(layout.createSequentialGroup()
                                         .addGap(7, 7, 7)
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(jLabel4)
-                                            .addComponent(jButton3))))
-                                .addGap(49, 49, 49)))
-                        .addComponent(drawingField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(130, 130, 130)
-                                .addComponent(jButton1))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(100, 100, 100)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(pickFIleButton, javax.swing.GroupLayout.PREFERRED_SIZE, 137, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addGroup(layout.createSequentialGroup()
-                                                .addGap(60, 60, 60)
-                                                .addComponent(jLabel2))
-                                            .addGroup(layout.createSequentialGroup()
-                                                .addGap(33, 33, 33)
-                                                .addComponent(jLabel3)))
-                                        .addGap(41, 41, 41)))))
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addGap(18, 18, 18)
+                                            .addComponent(recognizeButton))))
+                                .addGap(26, 26, 26)))
+                        .addComponent(downsampledDataJPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(51, 51, 51)))
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -184,66 +192,95 @@ public class MainFrame extends javax.swing.JFrame {
                 .addGap(50, 50, 50))
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(pickFIleButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jLabel3)
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(drawingField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(drawingField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addComponent(jButton1)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLabel4)
-                .addGap(10, 10, 10)
-                .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(4, 4, 4)
-                .addComponent(jButton2)
-                .addGap(38, 38, 38)
-                .addComponent(jButton3)
-                .addGap(139, 139, 139))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(pickFileButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jLabel3)
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(drawingField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(downsampledDataJPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(18, 18, 18)
+                        .addComponent(clearButton)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(jLabel4)
+                        .addGap(10, 10, 10)
+                        .addComponent(letterComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(4, 4, 4)
+                        .addComponent(trainButton)
+                        .addGap(38, 38, 38)
+                        .addComponent(recognizeButton)
+                        .addGap(139, 139, 139))))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void pickFIleButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pickFIleButtonActionPerformed
+    private void pickFileButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pickFileButtonActionPerformed
         ReadFile readFile = new ReadFile();
         try {
             //jTextField1.setText(readFile.chooseFile());
             image = ImageIO.read(new File(readFile.chooseFile()));
-
             ImageIcon icon = new ImageIcon();
             icon.setImage(image);
             Image image = icon.getImage();
             image = image.getScaledInstance(this.getHeight(), this.getHeight(), Image.SCALE_SMOOTH);
             icon = new ImageIcon(image);
             jLabel1.setIcon(icon);
-
-//            jPanel1.add(image);
-//            Graphics grphcs;
-//            
-//            jPanel1.paintComponents(grphcs);
-//            grphcs.drawImage(image, 0, 0, this);
         } catch (Exception e) {
 
         }
-        // jTextField1.setText(readFile.chooseFile());
-    }//GEN-LAST:event_pickFIleButtonActionPerformed
+    }//GEN-LAST:event_pickFileButtonActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void clearButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearButtonActionPerformed
         drawingField1.clearImage();
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_clearButtonActionPerformed
 
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+    private void recognizeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recognizeButtonActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jButton3ActionPerformed
+    }//GEN-LAST:event_recognizeButtonActionPerformed
+
+    private void trainButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trainButtonActionPerformed
+        int i;
+
+        final String letter = (String) letterComboBox.getSelectedItem();
+        if (letter == null) {
+            return;
+        }
+
+        drawingField1.downSample();
+        DownsampledData downsampledData = (DownsampledData) downsampledDataJPanel1.getDownsampledData().clone();
+
+        downsampledData.setLetter(letter.charAt(0));
+
+        for (i = 0; i < lettersList.size(); i++) {
+            final Comparable str = (Comparable) lettersList
+                    .get(i);
+            if (str.equals(letter)) {
+                JOptionPane.showMessageDialog(this,
+                        "That letter is already defined, delete it first!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (str.compareTo(downsampledData) > 0) {
+                lettersList.add(downsampledData);
+                return;
+            }
+        }
+        lettersList.add(downsampledData);
+
+        //this.letters.setSelectedIndex(i);
+        downsampledDataJPanel1.repaint();
+
+    }//GEN-LAST:event_trainButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -281,12 +318,9 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton clearButton;
+    private com.biai.writingrecognition.view.DownsampledDataJPanel downsampledDataJPanel1;
     private com.biai.writingrecognition.view.DrawingField drawingField1;
-    private com.biai.writingrecognition.view.DrawingField drawingField3;
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -294,6 +328,13 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextArea jTextArea1;
-    private javax.swing.JButton pickFIleButton;
+    private javax.swing.JComboBox<String> letterComboBox;
+    private javax.swing.JButton pickFileButton;
+    private javax.swing.JButton recognizeButton;
+    private javax.swing.JButton trainButton;
     // End of variables declaration//GEN-END:variables
+
+    private void initialise() {
+        drawingField1.setDownsampledDataJPanel(downsampledDataJPanel1);
+    }
 }
