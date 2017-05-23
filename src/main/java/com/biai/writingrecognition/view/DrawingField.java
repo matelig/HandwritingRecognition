@@ -50,6 +50,7 @@ public class DrawingField extends JPanel {
     }
 
     public void clearImage() {
+        image = null;
         graphicsHandle.setColor(Color.white);
         graphicsHandle.fillRect(0, 0, getWidth(), getHeight());
         downSampleBottom = downSampleTop = downSampleLeft = downSampleRight = 0;
@@ -206,6 +207,11 @@ public class DrawingField extends JPanel {
         getGraphics().drawImage(image, 0, 0, this);
         lastX = e.getX();
         lastY = e.getY();
+    }
+
+    public void setImage(Image image) {
+      this.image = image;
+     repaint();
     }
 
 }
