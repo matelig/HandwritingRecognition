@@ -262,8 +262,51 @@ public class MainFrame extends javax.swing.JFrame {
         drawingField1.clearImage();
     }//GEN-LAST:event_clearButtonActionPerformed
 
+    char[] mapNeurons() {
+        char map[] = new char[letterListModel.size()];
+
+        for (int i = 0; i < map.length; i++) {
+            map[i] = '?';
+        }
+        for (int i = 0; i < letterListModel.size(); i++) {
+            final MLData input = new BasicMLData(Config.DOWNSAMPLE_HEIGHT * Config.DOWNSAMPLE_WIDTH);
+            int idx = 0;
+            final DownsampledData ds = (DownsampledData) letterListModel
+                    .getElementAt(i);
+            for (int y = 0; y < ds.getHeight(); y++) {
+                for (int x = 0; x < ds.getWidth(); x++) {
+                    input.setData(idx++, ds.getDataForPixel(x, y) ? .5 : -.5);
+                }
+            }
+
+            int best = net.classify(input);
+            map[best] = ds.getLetter();
+        }
+        return map;
+    }
     private void recognizeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recognizeButtonActionPerformed
-        // TODO add your handling code here:
+        if (net == null) {
+            JOptionPane.showMessageDialog(this, "I need to be trained first!",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        drawingField1.downSample();
+
+        final MLData input = new BasicMLData(Config.DOWNSAMPLE_HEIGHT * Config.DOWNSAMPLE_WIDTH);
+        int idx = 0;
+        final DownsampledData downsampledData = this.downsampledDataJPanel1.getDownsampledData();
+        for (int y = 0; y < downsampledData.getHeight(); y++) {
+            for (int x = 0; x < downsampledData.getWidth(); x++) {
+                input.setData(idx++, downsampledData.getDataForPixel(x, y) ? .5 : -.5);
+            }
+        }
+
+        final int best = this.net.classify(input);
+        final char map[] = mapNeurons();
+        JOptionPane
+                .showMessageDialog(this, "  " + map[best] + "   (Neuron #"
+                        + best + " fired)", "That Letter Is",
+                        JOptionPane.PLAIN_MESSAGE);
     }//GEN-LAST:event_recognizeButtonActionPerformed
 
     private void addButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addButtonActionPerformed
@@ -304,20 +347,20 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_addButtonActionPerformed
 
     private void trainButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trainButtonActionPerformed
-       train();
+        train();
     }//GEN-LAST:event_trainButtonActionPerformed
 
-    	void onLetterSelected( ListSelectionEvent event) {
-		if (lettersList.getSelectedIndex() == -1) {
-			return;
-		}
-		final DownsampledData selectedItem = (DownsampledData) letterListModel
-				.getElementAt(lettersList.getSelectedIndex());
-		downsampledDataJPanel1.setData((DownsampledData) selectedItem.clone());
-		downsampledDataJPanel1.repaint();
-		//drawingField1.clearImage();
+    void onLetterSelected(ListSelectionEvent event) {
+        if (lettersList.getSelectedIndex() == -1) {
+            return;
+        }
+        final DownsampledData selectedItem = (DownsampledData) letterListModel
+                .getElementAt(lettersList.getSelectedIndex());
+        downsampledDataJPanel1.setData((DownsampledData) selectedItem.clone());
+        downsampledDataJPanel1.repaint();
 
-	}
+    }
+
     /**
      * @param args the command line arguments
      */
@@ -379,46 +422,45 @@ public class MainFrame extends javax.swing.JFrame {
             public void valueChanged(ListSelectionEvent e) {
                 onLetterSelected(e);
             }
-            
+
         });
     }
 
     private void train() {
-      	try {
-			final int inputNeuron = Config.DOWNSAMPLE_HEIGHT
-					* Config.DOWNSAMPLE_WIDTH;
-			final int outputNeuron = letterListModel.size();
+        try {
+            final int inputNeuron = Config.DOWNSAMPLE_HEIGHT
+                    * Config.DOWNSAMPLE_WIDTH;
+            final int outputNeuron = letterListModel.size();
 
-			final MLDataSet trainingSet = new BasicMLDataSet();
-			for (int i = 0; i < letterListModel.size(); i++) {
-				final MLData item = new BasicMLData(inputNeuron);
-				int idx = 0;
-				final DownsampledData downsampledData = (DownsampledData) this.letterListModel
-						.getElementAt(i);
-				for (int y = 0; y < downsampledData.getHeight(); y++) {
-					for (int x = 0; x < downsampledData.getWidth(); x++) {
-						item.setData(idx++, downsampledData.getDataForPixel(x, y) ? .5 : -.5);
-					}
-				}
+            final MLDataSet trainingSet = new BasicMLDataSet();
+            for (int i = 0; i < letterListModel.size(); i++) {
+                final MLData item = new BasicMLData(inputNeuron);
+                int idx = 0;
+                final DownsampledData downsampledData = (DownsampledData) this.letterListModel
+                        .getElementAt(i);
+                for (int y = 0; y < downsampledData.getHeight(); y++) {
+                    for (int x = 0; x < downsampledData.getWidth(); x++) {
+                        item.setData(idx++, downsampledData.getDataForPixel(x, y) ? .5 : -.5);
+                    }
+                }
 
-				trainingSet.add(new BasicMLDataPair(item, null));
-			}
+                trainingSet.add(new BasicMLDataPair(item, null));
+            }
 
-			net = new SOM(inputNeuron,outputNeuron);
-			net.reset();
+            net = new SOM(inputNeuron, outputNeuron);
+            net.reset();
 
-			SOMClusterCopyTraining train = new SOMClusterCopyTraining(net,trainingSet);
-		
-			train.iteration();
+            SOMClusterCopyTraining train = new SOMClusterCopyTraining(net, trainingSet);
 
-		JOptionPane.showMessageDialog(this, "Training has completed.",
-				"Training", JOptionPane.PLAIN_MESSAGE);
+            train.iteration();
 
+            JOptionPane.showMessageDialog(this, "Training has completed.",
+                    "Training", JOptionPane.PLAIN_MESSAGE);
 
-		} catch (final Exception e) {
-			e.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Error: " + e, "Training",
-					JOptionPane.ERROR_MESSAGE);
-		}
+        } catch (final Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error: " + e, "Training",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
