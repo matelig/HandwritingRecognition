@@ -67,4 +67,9 @@ public class DownsampledData implements Comparable<DownsampledData>, Cloneable {
         this.letter = letter;
     }
 
+    @Override
+    public String toString() {
+        return "" + this.letter;
+    }
+
 }
