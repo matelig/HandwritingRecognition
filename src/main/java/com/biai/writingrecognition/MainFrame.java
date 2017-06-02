@@ -25,9 +25,6 @@ import org.encog.ml.data.basic.BasicMLDataSet;
 import org.encog.neural.networks.BasicNetwork;
 import org.encog.neural.networks.layers.BasicLayer;
 import org.encog.neural.networks.training.propagation.Propagation;
-import org.encog.neural.networks.training.propagation.back.Backpropagation;
-import org.encog.neural.networks.training.propagation.manhattan.ManhattanPropagation;
-import org.encog.neural.networks.training.propagation.quick.QuickPropagation;
 import org.encog.neural.networks.training.propagation.resilient.ResilientPropagation;
 
 /**
@@ -345,7 +342,6 @@ public class MainFrame extends javax.swing.JFrame {
             }
         }
         letterListModel.add(this.letterListModel.size(), downsampledData);
-        lettersList.setSelectedIndex(i);
         downsampledDataJPanel1.repaint();
 
     }//GEN-LAST:event_addButtonActionPerformed
@@ -525,8 +521,8 @@ public class MainFrame extends javax.swing.JFrame {
 
         network.addLayer(new BasicLayer(null, true, Config.DOWNSAMPLE_HEIGHT
                 * Config.DOWNSAMPLE_WIDTH));
-        network.addLayer(new BasicLayer(new ActivationElliott(), true, hiddenLayerNeuronsCount));
-        network.addLayer(new BasicLayer(new ActivationElliott(), false, 26));
+        network.addLayer(new BasicLayer(new ActivationSigmoid(), true, hiddenLayerNeuronsCount));
+        network.addLayer(new BasicLayer(new ActivationSigmoid(), false, 26));
 
         network.getStructure().finalizeStructure();
         network.reset();

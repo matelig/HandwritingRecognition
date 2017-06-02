@@ -14,14 +14,14 @@ import java.util.Arrays;
  */
 public class Outputs {
 
-
     private static Outputs instance;
 
     private ArrayList<ArrayList<Double>> goodValues;
 
     public static Outputs getInstance() {
-        if (instance == null)
+        if (instance == null) {
             instance = new Outputs();
+        }
 
         return instance;
     }
@@ -116,28 +116,13 @@ public class Outputs {
 
         return convertToDoubleArray(goodValues.get(index));
     }
-   
-
-  
-
-   
-
-//    public double[] getOutputForLetter(char letter) {
-//        int index = ((int) letter) - 65;
-//
-//        ArrayList<Integer> goodValue = goodValues.get(index);
-//        return convertToDoubleArray(goodValue);
-//
-//    }
 
     public double[] convertToDoubleArray(ArrayList<Double> goodValue) {
         double[] goodDoubles = new double[26];
         for (int i = 0; i < 26; i++) {
-            goodDoubles[i] =goodValue.get(i);
+            goodDoubles[i] = goodValue.get(i);
         }
         return goodDoubles;
     }
-
-
 
 }
