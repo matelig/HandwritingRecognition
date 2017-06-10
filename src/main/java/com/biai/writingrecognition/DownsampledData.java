@@ -1,5 +1,7 @@
 package com.biai.writingrecognition;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author alachman
@@ -70,6 +72,18 @@ public class DownsampledData implements Comparable<DownsampledData>, Cloneable {
     @Override
     public String toString() {
         return "" + this.letter;
+    }
+
+    void setPixels(ArrayList<Integer> goodPixels) {
+        for (int x = 0; x < filledPixels.length; x++) {
+            for (int y = 0; y < filledPixels[0].length; y++) {
+                if (goodPixels.get(x * filledPixels.length + y) == 1) {
+                    filledPixels[x][y] = true;
+                } else {
+                    filledPixels[x][y] = false;
+                }
+            }
+        }
     }
 
 }
