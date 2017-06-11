@@ -74,7 +74,7 @@ public class CustomPanel extends JPanel {
             }
         }
 
-//        downsampledDataJPanel.repaint();
+        downsampledDataJPanel.repaint();
         repaint();
 
     }

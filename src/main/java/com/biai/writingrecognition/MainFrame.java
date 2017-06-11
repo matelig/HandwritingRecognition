@@ -27,13 +27,14 @@ import org.encog.neural.networks.BasicNetwork;
 import org.encog.neural.networks.layers.BasicLayer;
 import org.encog.neural.networks.training.propagation.Propagation;
 import org.encog.neural.networks.training.propagation.resilient.ResilientPropagation;
+import org.encog.persist.EncogDirectoryPersistence;
 
 /**
  *
  * @author m_lig
  */
 public class MainFrame extends javax.swing.JFrame {
-    
+
     private DefaultListModel letterListModel = new DefaultListModel();
     private BasicNetwork network;
 
@@ -43,7 +44,7 @@ public class MainFrame extends javax.swing.JFrame {
     public MainFrame() {
         initComponents();
         initialise();
-        
+
     }
 
     /**
@@ -73,6 +74,8 @@ public class MainFrame extends javax.swing.JFrame {
         drawingPanel1 = new com.biai.writingrecognition.view.DrawingPanel();
         deleteButton = new javax.swing.JButton();
         addButton = new javax.swing.JButton();
+        saveNetworkButton = new javax.swing.JButton();
+        loadNetworkButton = new javax.swing.JButton();
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -180,6 +183,21 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
+        saveNetworkButton.setText("Save network");
+        saveNetworkButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                saveNetworkButtonActionPerformed(evt);
+            }
+        });
+
+        loadNetworkButton.setText("Load network");
+        loadNetworkButton.setToolTipText("");
+        loadNetworkButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                loadNetworkButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -217,9 +235,15 @@ public class MainFrame extends javax.swing.JFrame {
                         .addComponent(downsampledDataJPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(43, 43, 43))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(recognizeButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(trainButton, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(saveNetworkButton)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(loadNetworkButton))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(recognizeButton)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(trainButton, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addGap(58, 58, 58)))
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 24, Short.MAX_VALUE)
@@ -267,7 +291,11 @@ public class MainFrame extends javax.swing.JFrame {
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                     .addComponent(loadButton)
                                     .addComponent(saveButton))))
-                        .addGap(0, 77, Short.MAX_VALUE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(saveNetworkButton)
+                            .addComponent(loadNetworkButton))
+                        .addGap(0, 43, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
@@ -275,14 +303,14 @@ public class MainFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void clearButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearButtonActionPerformed
-        
+
         drawingPanel1.clear();
 
     }//GEN-LAST:event_clearButtonActionPerformed
-    
+
     char[] mapNeurons() {
         char map[] = new char[letterListModel.size()];
-        
+
         for (int i = 0; i < map.length; i++) {
             map[i] = '?';
         }
@@ -296,21 +324,21 @@ public class MainFrame extends javax.swing.JFrame {
                     input.setData(idx++, ds.getDataForPixel(x, y) ? .5 : -.5);
                 }
             }
-            
+
             int best = network.classify(input);
             map[best] = ds.getLetter();
         }
         return map;
     }
     private void recognizeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recognizeButtonActionPerformed
-        
+
         if (network == null) {
             JOptionPane.showMessageDialog(this, "I need to be trained first!",
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         drawingPanel1.downsample();
-        
+
         final MLData input = new BasicMLData(Config.DOWNSAMPLE_HEIGHT * Config.DOWNSAMPLE_WIDTH);
         int idx = 0;
         final DownsampledData downsampledData = downsampledDataJPanel1.getDownsampledData();
@@ -321,34 +349,34 @@ public class MainFrame extends javax.swing.JFrame {
         }
         MLData result = network.compute(input);
         displayResults(result);
-        
-        final int best = this.network.classify(input);
-        final char map[] = mapNeurons();
-        final DownsampledData recognizedLetter = new DownsampledData(map[best], Config.DOWNSAMPLE_WIDTH, Config.DOWNSAMPLE_HEIGHT);
-        recognizedLetter.setPixels(GoodPixels.getInstance().getGoodPixels(map[best]));
+
+        final char best = getWinnerLetter(result);
+    
+        final DownsampledData recognizedLetter = new DownsampledData(best, Config.DOWNSAMPLE_WIDTH, Config.DOWNSAMPLE_HEIGHT);
+        recognizedLetter.setPixels(GoodPixels.getInstance().getGoodPixels(best));
         downsampledDataJPanel1.setData(recognizedLetter);
         downsampledDataJPanel1.repaint();
-        
+
         JOptionPane
-                .showMessageDialog(this, "  " + map[best], "That Letter Is",
+                .showMessageDialog(this, "  " + best, "That Letter Is",
                         JOptionPane.PLAIN_MESSAGE);
-        
+
 
     }//GEN-LAST:event_recognizeButtonActionPerformed
 
     private void addButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addButtonActionPerformed
         int i;
-        
+
         final String letter = (String) letterComboBox.getSelectedItem();
         if (letter == null) {
             return;
         }
-        
+
         drawingPanel1.downsample();
         DownsampledData downsampledData = (DownsampledData) downsampledDataJPanel1.getDownsampledData().clone();
-        
+
         downsampledData.setLetter(letter.charAt(0));
-        
+
         for (i = 0; i < letterListModel.size(); i++) {
             final Comparable str = (Comparable) letterListModel
                     .getElementAt(i);
@@ -358,9 +386,9 @@ public class MainFrame extends javax.swing.JFrame {
                         "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             if (str.compareTo(downsampledData) > 0) {
-                
+
                 letterListModel.add(i, downsampledData);
                 return;
             }
@@ -381,7 +409,7 @@ public class MainFrame extends javax.swing.JFrame {
 
             os = new FileOutputStream("./sample.dat", false);
             ps = new PrintStream(os);
-            
+
             for (int i = 0; i < letterListModel.size(); i++) {
                 final DownsampledData ds = (DownsampledData) letterListModel
                         .elementAt(i);
@@ -393,13 +421,13 @@ public class MainFrame extends javax.swing.JFrame {
                 }
                 ps.println("");
             }
-            
+
             ps.close();
             os.close();
-            
+
             JOptionPane.showMessageDialog(this, "Saved to 'sample.dat'.",
                     "Training", JOptionPane.PLAIN_MESSAGE);
-            
+
         } catch (final Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error: " + e, "Training",
@@ -416,9 +444,9 @@ public class MainFrame extends javax.swing.JFrame {
             r = new BufferedReader(f);
             String line;
             int i = 0;
-            
+
             letterListModel.clear();
-            
+
             while ((line = r.readLine()) != null) {
                 final DownsampledData ds = new DownsampledData(line.charAt(0),
                         Config.DOWNSAMPLE_WIDTH, Config.DOWNSAMPLE_HEIGHT);
@@ -430,13 +458,13 @@ public class MainFrame extends javax.swing.JFrame {
                     }
                 }
             }
-            
+
             r.close();
             f.close();
-            
+
             JOptionPane.showMessageDialog(this, "Loaded from 'sample.dat'.",
                     "Training", JOptionPane.PLAIN_MESSAGE);
-            
+
         } catch (final Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error: " + e, "Training",
@@ -446,17 +474,27 @@ public class MainFrame extends javax.swing.JFrame {
 
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
         final int i = lettersList.getSelectedIndex();
-        
+
         if (i == -1) {
             JOptionPane.showMessageDialog(this,
                     "Please select a letter to delete.", "Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
+
         letterListModel.remove(i);
     }//GEN-LAST:event_deleteButtonActionPerformed
-    
+
+    private void saveNetworkButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveNetworkButtonActionPerformed
+        System.out.println("Saving network");
+        EncogDirectoryPersistence.saveObject(new File("network"), network);
+    }//GEN-LAST:event_saveNetworkButtonActionPerformed
+
+    private void loadNetworkButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadNetworkButtonActionPerformed
+
+        network = (BasicNetwork) EncogDirectoryPersistence.loadObject(new File("network"));
+    }//GEN-LAST:event_loadNetworkButtonActionPerformed
+
     void onLetterSelected(ListSelectionEvent event) {
         if (lettersList.getSelectedIndex() == -1) {
             return;
@@ -517,9 +555,11 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> letterComboBox;
     private javax.swing.JList<String> lettersList;
     private javax.swing.JButton loadButton;
+    private javax.swing.JButton loadNetworkButton;
     private javax.swing.JTextArea percentTextArea;
     private javax.swing.JButton recognizeButton;
     private javax.swing.JButton saveButton;
+    private javax.swing.JButton saveNetworkButton;
     private javax.swing.JButton trainButton;
     // End of variables declaration//GEN-END:variables
 
@@ -532,12 +572,17 @@ public class MainFrame extends javax.swing.JFrame {
             public void valueChanged(ListSelectionEvent e) {
                 onLetterSelected(e);
             }
-            
+
         });
         drawingPanel1.init(drawingPanel1.getWidth(), drawingPanel1.getHeight(), 20);
     }
-    
+
     private void train() {
+        if (letterListModel.size() == 0) {
+            JOptionPane.showMessageDialog(this, "Add some letters first!",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         final int inputNeuron = Config.DOWNSAMPLE_HEIGHT
                 * Config.DOWNSAMPLE_WIDTH;
         final MLDataSet trainingSet = new BasicMLDataSet();
@@ -554,44 +599,44 @@ public class MainFrame extends javax.swing.JFrame {
             MLData ideal = getIdealForLetter(downsampledData.getLetter());
             trainingSet.add(new BasicMLDataPair(item, ideal));
         }
-        
+
         network = new BasicNetwork();
-        
+
         int hiddenLayerNeuronsCount = 100;
-        
+
         network.addLayer(new BasicLayer(null, true, Config.DOWNSAMPLE_HEIGHT
                 * Config.DOWNSAMPLE_WIDTH));
         network.addLayer(new BasicLayer(new ActivationElliott(), true, hiddenLayerNeuronsCount));
         network.addLayer(new BasicLayer(new ActivationElliott(), false, 26));
-        
+
         network.getStructure().finalizeStructure();
         network.reset();
-        
+
         final Propagation train = new ResilientPropagation(network, trainingSet);
-        
-        int epochsCount = 100;
-        
+
+        int epochsCount = 2000;
+
         for (int epoch = 1; epoch < epochsCount; epoch++) {
             train.iteration();
             System.out.println("epoch #" + epoch + " error: " + train.getError());
-            
+
         }
-        
+
         train.finishTraining();
         double error = network.calculateError(trainingSet);
         System.out.println("error" + error);
         JOptionPane.showMessageDialog(this, "Training has completed.",
                 "Training", JOptionPane.PLAIN_MESSAGE);
-        
+
     }
-    
+
     private MLData getIdealForLetter(char letter) {
         int inputNeuron = Config.DOWNSAMPLE_HEIGHT * Config.DOWNSAMPLE_WIDTH;
         final MLData item = new BasicMLData(inputNeuron);
         item.setData(Outputs.getInstance().getGoodOutput(letter));
         return item;
     }
-    
+
     private void displayResults(MLData result) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < result.getData().length; i++) {
@@ -602,5 +647,19 @@ public class MainFrame extends javax.swing.JFrame {
         }
         percentTextArea.setText(builder.toString());
     }
-    
+
+    private char getWinnerLetter(MLData result) {
+        int winnerIndex = 0;
+        double bestValue = 0.0;
+        for (int i = 0; i < result.getData().length; i++) {
+            if (result.getData()[i] > bestValue) {
+                winnerIndex = i;
+                bestValue = result.getData()[i];
+            }
+
+        }
+        return (char) (winnerIndex + 65);
+
+    }
+
 }
